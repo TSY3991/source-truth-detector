@@ -1,0 +1,28 @@
+{
+  "name": "source-truth-detector",
+  "version": "0.2.0-alpha",
+  "description": "A read-only CLI tool to find what your project actually uses.",
+  "keywords": [
+    "static-analysis",
+    "dead-code",
+    "dependency-graph",
+    "source-of-truth",
+    "cli"
+  ],
+  "license": "MIT",
+  "bin": {
+    "source-truth-detector": "./bin/cli.js"
+  },
+  "main": "./src/index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/**/*.test.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "docs/"
+  ]
+}
