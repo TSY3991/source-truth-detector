@@ -1,6 +1,6 @@
 {
   "name": "source-truth-detector",
-  "version": "0.2.0-alpha",
+  "version": "0.4.0-alpha",
   "description": "A read-only CLI tool to find what your project actually uses.",
   "keywords": [
     "static-analysis",
@@ -18,7 +18,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node --test test/**/*.test.js test/cli/*.test.js"
+    "test": "node --test test/**/*.test.js test/cli/*.test.js test/scan/*.test.js"
   },
   "files": [
     "bin/",

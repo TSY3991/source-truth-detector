@@ -3,6 +3,7 @@
 
 const path = require('node:path');
 const { buildGraph } = require('../src/graph/build');
+const { listFiles } = require('../src/scan/listFiles');
 
 const args = process.argv.slice(2);
 
@@ -28,6 +29,7 @@ console.log(`scan root  : ${absRoot}`);
 console.log(`entrypoint : ${absEntry}`);
 console.log('');
 
+// --- build dependency graph ---
 let graph;
 try {
   graph = buildGraph(absEntry, absRoot);
@@ -36,11 +38,39 @@ try {
   process.exit(1);
 }
 
-const used = [...graph.keys()].sort();
+// --- collect all .js/.jsx files in rootDir ---
+const allFiles = listFiles(absRoot);
+const usedSet = new Set(graph.keys());
 
+const used = [...usedSet].sort();
+const unreferenced = allFiles.filter(f => !usedSet.has(f));
+
+const total = allFiles.length;
+const usedCount = used.length;
+const unreferencedCount = unreferenced.length;
+const coverage = total > 0 ? ((usedCount / total) * 100).toFixed(1) : '0.0';
+
+// --- USED files ---
 console.log('USED files:');
 for (const f of used) {
   console.log(' ', f);
 }
 console.log('');
-console.log(`total used : ${used.length}`);
+
+// --- UNREFERENCED files ---
+console.log('UNREFERENCED files:');
+if (unreferenced.length === 0) {
+  console.log('  (none)');
+} else {
+  for (const f of unreferenced) {
+    console.log(' ', f);
+  }
+}
+console.log('');
+
+// --- Scan Summary ---
+console.log('Scan Summary:');
+console.log(`  Total files scanned : ${total}`);
+console.log(`  Used files          : ${usedCount}`);
+console.log(`  Unreferenced files  : ${unreferencedCount}`);
+console.log(`  Coverage            : ${coverage}%`);
