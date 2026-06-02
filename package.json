@@ -11,14 +11,14 @@
   ],
   "license": "MIT",
   "bin": {
-    "source-truth-detector": "./bin/cli.js"
+    "source-truth-detector": "./bin/source-truth-detector.js"
   },
   "main": "./src/index.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node --test test/**/*.test.js"
+    "test": "node --test test/**/*.test.js test/cli/*.test.js"
   },
   "files": [
     "bin/",
