@@ -1,6 +1,6 @@
 {
   "name": "source-truth-detector",
-  "version": "0.5.0-alpha",
+  "version": "0.6.0-alpha",
   "description": "A read-only CLI tool to find what your project actually uses.",
   "keywords": [
     "static-analysis",

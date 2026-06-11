@@ -11,6 +11,8 @@ const ENTRY = path.resolve(FIXTURE_ROOT, 'entry.js');
 const MULTI_ROOT = path.resolve(__dirname, '../graph/fixtures/multi-entry');
 const ENTRY_A = path.resolve(MULTI_ROOT, 'entryA.js');
 const ENTRY_B = path.resolve(MULTI_ROOT, 'entryB.js');
+const SHADOW_ROOT = path.resolve(__dirname, '../graph/fixtures/shadow-source-cli');
+const SHADOW_ENTRY = path.resolve(SHADOW_ROOT, 'entry.js');
 
 function runScan(root, ...entries) {
   const entryFlags = entries.map((e) => `--entry "${e}"`).join(' ');
@@ -98,7 +100,33 @@ test('cli scan: multi-entry — orphan.js is UNREFERENCED, used=5, total=6', () 
 
 test('cli scan: multi-entry — shared.js flagged as POSSIBLE_SOURCE_OF_TRUTH (fan-in 2)', () => {
   const out = runScan(MULTI_ROOT, ENTRY_A, ENTRY_B);
-  const sotSection = out.split('POSSIBLE_SOURCE_OF_TRUTH files:')[1].split('Scan Summary:')[0];
+  const sotSection = out.split('POSSIBLE_SOURCE_OF_TRUTH files:')[1].split('SHADOW_SOURCE files:')[0];
   assert.ok(sotSection.includes('shared.js'), 'shared.js not flagged as POSSIBLE_SOURCE_OF_TRUTH');
   assert.ok(sotSection.includes('referenced by 2 files'), 'shared.js fan-in count mismatch');
+});
+
+test('cli scan: multi-entry — no SHADOW_SOURCE false positives', () => {
+  const out = runScan(MULTI_ROOT, ENTRY_A, ENTRY_B);
+  const shadowSection = out.split('SHADOW_SOURCE files:')[1].split('Scan Summary:')[0];
+  assert.ok(shadowSection.includes('(none)'), `expected no shadow sources:\n${out}`);
+  assert.ok(out.includes('Shadow sources             : 0'), `shadow source count mismatch:\n${out}`);
+});
+
+// ── shadow source ────────────────────────────────────────────────────────────
+
+test('cli scan: shadow-source — canonical.js flagged as POSSIBLE_SOURCE_OF_TRUTH (fan-in 6)', () => {
+  const out = runScan(SHADOW_ROOT, SHADOW_ENTRY);
+  const sotSection = out.split('POSSIBLE_SOURCE_OF_TRUTH files:')[1].split('SHADOW_SOURCE files:')[0];
+  assert.ok(sotSection.includes('canonical.js'), 'canonical.js not flagged as POSSIBLE_SOURCE_OF_TRUTH');
+  assert.ok(sotSection.includes('referenced by 6 files'), 'canonical.js fan-in count mismatch');
+});
+
+test('cli scan: shadow-source — duplicate.js flagged as SHADOW_SOURCE of canonical.js', () => {
+  const out = runScan(SHADOW_ROOT, SHADOW_ENTRY);
+  const shadowSection = out.split('SHADOW_SOURCE files:')[1].split('Scan Summary:')[0];
+  assert.ok(shadowSection.includes('duplicate.js'), 'duplicate.js not flagged as SHADOW_SOURCE');
+  assert.ok(shadowSection.includes('-> duplicates'), 'missing duplicates explanation');
+  assert.ok(shadowSection.includes('A, B'), 'shared export names mismatch');
+  assert.ok(shadowSection.includes('canonical.js'), 'missing canonical.js reference');
+  assert.ok(out.includes('Shadow sources             : 1'), `shadow source count mismatch:\n${out}`);
 });

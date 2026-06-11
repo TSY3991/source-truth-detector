@@ -5,6 +5,7 @@ const path = require('node:path');
 const { buildGraph } = require('../src/graph/build');
 const { listFiles } = require('../src/scan/listFiles');
 const { findPossibleSourcesOfTruth } = require('../src/analysis/sourceOfTruth');
+const { findShadowSources } = require('../src/analysis/shadowSource');
 
 const args = process.argv.slice(2);
 
@@ -90,10 +91,24 @@ if (sourcesOfTruth.length === 0) {
 }
 console.log('');
 
+// --- SHADOW_SOURCE files ---
+const shadowSources = findShadowSources(graph, sourcesOfTruth);
+console.log('SHADOW_SOURCE files:');
+if (shadowSources.length === 0) {
+  console.log('  (none)');
+} else {
+  for (const { file, duplicatesFrom, sharedExports } of shadowSources) {
+    console.log(`  ${file}`);
+    console.log(`    -> duplicates ${sharedExports.join(', ')} from ${duplicatesFrom}`);
+  }
+}
+console.log('');
+
 // --- Scan Summary ---
 console.log('Scan Summary:');
 console.log(`  Total files scanned        : ${total}`);
 console.log(`  Used files                 : ${usedCount}`);
 console.log(`  Unreferenced files         : ${unreferencedCount}`);
 console.log(`  Possible sources of truth  : ${sourcesOfTruth.length}`);
+console.log(`  Shadow sources             : ${shadowSources.length}`);
 console.log(`  Coverage                   : ${coverage}%`);

@@ -38,22 +38,28 @@ USED files:
   src/graph/resolve.js
 
 UNREFERENCED files:
+  src/analysis/shadowSource.js
   src/analysis/sourceOfTruth.js
+  src/graph/extractExports.js
   src/scan/listFiles.js
 
 POSSIBLE_SOURCE_OF_TRUTH files:
   src/graph/parse.js  (referenced by 1 files)
   src/graph/resolve.js  (referenced by 1 files)
 
+SHADOW_SOURCE files:
+  (none)
+
 Scan Summary:
-  Total files scanned        : 5
+  Total files scanned        : 7
   Used files                 : 3
-  Unreferenced files         : 2
+  Unreferenced files         : 4
   Possible sources of truth  : 2
-  Coverage                   : 60.0%
+  Shadow sources             : 0
+  Coverage                   : 42.9%
 ```
 
-→ 從 `build.js` 這個 entrypoint 出發，`sourceOfTruth.js` 和 `listFiles.js` 沒有被依賴鏈引用到，所以是 `UNREFERENCED`；`parse.js` / `resolve.js` 被多個檔案依賴，列為 `POSSIBLE_SOURCE_OF_TRUTH`。是不是「該刪」或「該注意」由你判斷——工具只負責把事實攤開。
+→ 從 `build.js` 這個 entrypoint 出發，幾個 `src/analysis/` 與 `src/scan/` 底下的檔案沒有被依賴鏈引用到，所以是 `UNREFERENCED`（它們其實是被 CLI 主程式 `bin/` 直接呼叫，只是不在這個 entrypoint 的依賴鏈上）；`parse.js` / `resolve.js` 被多個檔案依賴，列為 `POSSIBLE_SOURCE_OF_TRUTH`；目前沒有偵測到 `SHADOW_SOURCE`。是不是「該刪」或「該注意」由你判斷——工具只負責把事實攤開。
 
 ---
 
@@ -92,7 +98,7 @@ Step 3: 你看報告，自己決定
 
 ---
 
-## ✅ 現在就能用 — 30 秒範例（v0.5.0-alpha）
+## ✅ 現在就能用 — 30 秒範例（v0.6.0-alpha）
 
 不需要 npm install、不需要建置。直接用 Node 執行：
 
@@ -119,19 +125,25 @@ USED files:
   src/graph/resolve.js
 
 UNREFERENCED files:
+  src/analysis/shadowSource.js
   src/analysis/sourceOfTruth.js
+  src/graph/extractExports.js
   src/scan/listFiles.js
 
 POSSIBLE_SOURCE_OF_TRUTH files:
   src/graph/parse.js  (referenced by 1 files)
   src/graph/resolve.js  (referenced by 1 files)
 
+SHADOW_SOURCE files:
+  (none)
+
 Scan Summary:
-  Total files scanned        : 5
+  Total files scanned        : 7
   Used files                 : 3
-  Unreferenced files         : 2
+  Unreferenced files         : 4
   Possible sources of truth  : 2
-  Coverage                   : 60.0%
+  Shadow sources             : 0
+  Coverage                   : 42.9%
 ```
 
 `listFiles.js` 沒有被 `build.js` 的依賴鏈引用到，所以被標成 `UNREFERENCED`——即使它確實是專案的一部分（只是被 CLI 主程式直接呼叫，而非從這個 entrypoint 可達）。這正是工具的用途：**告訴你依賴鏈的事實，由你判斷這個結果合不合理**。
@@ -158,7 +170,7 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 ---
 
-## ⚠️ 已知限制（v0.5.0-alpha）
+## ⚠️ 已知限制（v0.6.0-alpha）
 
 使用前請先了解，避免誤判：
 
@@ -192,7 +204,7 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 ## 完整功能狀態
 
-**已完成（v0.5.0-alpha）：**
+**已完成（v0.6.0-alpha）：**
 
 - Dependency Graph — 建立檔案相依關係圖
 - Import Tracking — 追蹤 `import` 語法
@@ -201,10 +213,10 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 - USED / UNREFERENCED Detector + Coverage 摘要
 - Multi-Entrypoint Support — 可同時指定多個 `--entry`，合併計算 USED 集合
 - Source-of-Truth Heuristics — 找出被大量檔案依賴的核心設定來源（高 fan-in）
+- Shadow Source Detection — 找出與核心來源共用大量 export 名稱、疑似過時複本的檔案
 
 **規劃中：**
 
-- Shadow Source Detection — 找出重複的邏輯片段
 - Markdown / JSON Reports — 輸出可閱讀的分析報告
 - TypeScript（`.ts` / `.tsx`）支援
 
@@ -228,9 +240,11 @@ npm test
 | `USED` | ✅ 已實作 | 被實際執行路徑引用 |
 | `UNREFERENCED` | ✅ 已實作 | 存在但沒有地方呼叫它 |
 | `POSSIBLE_SOURCE_OF_TRUTH` | ✅ 已實作 | 被大量檔案依賴（高 fan-in，閾值見下方） |
-| `SHADOW_SOURCE` | 🚧 規劃中 | 重複邏輯，存在於非正式位置 |
+| `SHADOW_SOURCE` | ✅ 已實作 | 與 `POSSIBLE_SOURCE_OF_TRUTH` 共用大量同名 export，疑似過時複本 |
 
 > `POSSIBLE_SOURCE_OF_TRUTH` 判斷標準：被 **5 個以上**檔案引用，或引用數佔 USED 檔案總數 **超過 15%**，符合任一即列出。
+>
+> `SHADOW_SOURCE` 判斷標準：與某個 `POSSIBLE_SOURCE_OF_TRUTH` 檔案共用 **2 個以上**的 export 名稱，且這些共用名稱佔該來源 export 總數 **超過 50%**。這是名稱層級的啟發式比對，不比對實際數值，找到的結果務必人工確認。
 
 ---
 
@@ -254,7 +268,7 @@ A: **不一定。** 常見情況包括：
 A: **絕對不會。** 這是 read-only 工具，只輸出報告，不寫入、不刪除、不修改任何檔案。
 
 **Q: 支援 TypeScript 嗎？**
-A: 目前（v0.5.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
+A: 目前（v0.6.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
 
 ---
 
@@ -324,7 +338,7 @@ Step 3: You read the report and decide
 
 ---
 
-## Try it now — 30 second example (v0.5.0-alpha)
+## Try it now — 30 second example (v0.6.0-alpha)
 
 No npm install or build step required. Run directly with Node:
 
@@ -351,19 +365,25 @@ USED files:
   src/graph/resolve.js
 
 UNREFERENCED files:
+  src/analysis/shadowSource.js
   src/analysis/sourceOfTruth.js
+  src/graph/extractExports.js
   src/scan/listFiles.js
 
 POSSIBLE_SOURCE_OF_TRUTH files:
   src/graph/parse.js  (referenced by 1 files)
   src/graph/resolve.js  (referenced by 1 files)
 
+SHADOW_SOURCE files:
+  (none)
+
 Scan Summary:
-  Total files scanned        : 5
+  Total files scanned        : 7
   Used files                 : 3
-  Unreferenced files         : 2
+  Unreferenced files         : 4
   Possible sources of truth  : 2
-  Coverage                   : 60.0%
+  Shadow sources             : 0
+  Coverage                   : 42.9%
 ```
 
 ---
@@ -388,7 +408,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 
 ---
 
-## Known Limitations (v0.5.0-alpha)
+## Known Limitations (v0.6.0-alpha)
 
 - **Only `.js` / `.jsx`** — `.ts` / `.tsx` files are not scanned or tracked
 - **Only relative imports/requires** (`./` or `../`) are resolved — `node_modules` packages and bare specifiers (e.g. `import React from 'react'`) are not analyzed
@@ -396,7 +416,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 
 ---
 
-## Current Features (v0.5.0-alpha)
+## Current Features (v0.6.0-alpha)
 
 **Implemented:**
 
@@ -407,10 +427,10 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 - USED / UNREFERENCED Detector + Coverage summary
 - Multi-Entrypoint Support — pass `--entry` multiple times; USED sets are merged
 - Source-of-Truth Heuristics — flags files with unusually high fan-in (referenced by many other files)
+- Shadow Source Detection — flags files sharing many export names with a source-of-truth file (likely stale copies)
 
 **Planned:**
 
-- Shadow Source Detection
 - Markdown / JSON Reports
 - TypeScript (`.ts` / `.tsx`) support
 
@@ -424,7 +444,8 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 | v0.2.0-alpha | Static scanner — import/require graph, USED/UNREFERENCED |
 | v0.4.0-alpha | Multi-Entrypoint support |
 | v0.5.0-alpha | Source-of-Truth detection (fan-in heuristics) |
-| v0.6.0 | Shadow Source detection, JSON/Markdown reports |
+| v0.6.0-alpha | Shadow Source detection (export-name heuristics) |
+| v0.7.0 | JSON/Markdown reports |
 | v1.0.0 | Stable, published to npm, CI integration guide |
 
 ---
@@ -449,7 +470,7 @@ The tool reports the fact "the dependency chain can't reach this file" — not "
 A: **Never.** This is a read-only tool. It only prints a report — it never writes, deletes, or modifies anything.
 
 **Q: Does it support TypeScript?**
-A: Not yet (v0.5.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
+A: Not yet (v0.6.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
 
 ---
 
