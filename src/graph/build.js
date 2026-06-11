@@ -11,21 +11,23 @@ const { resolveSpecifier } = require('./resolve');
  * Returns a Map where each key is an absolute file path and each value is:
  *   { inbound: Set<string>, outbound: Set<string> }
  *
- * Only files reachable from entrypoint within rootDir are included.
+ * Only files reachable from the given entrypoint(s) within rootDir are included.
  * Unresolvable specifiers (node_modules, missing files, outside rootDir) are skipped.
  *
- * @param {string} entrypoint  absolute or rootDir-relative path to the entry file
- * @param {string} rootDir     project root used as the resolution boundary
+ * @param {string|string[]} entrypoint  one or more absolute/rootDir-relative entry files
+ * @param {string} rootDir              project root used as the resolution boundary
  * @returns {Map<string, { inbound: Set<string>, outbound: Set<string> }>}
  */
 function buildGraph(entrypoint, rootDir) {
-  const entry = path.resolve(entrypoint);
+  const entries = (Array.isArray(entrypoint) ? entrypoint : [entrypoint]).map((e) =>
+    path.resolve(e)
+  );
   const root = path.resolve(rootDir);
 
   /** @type {Map<string, { inbound: Set<string>, outbound: Set<string> }>} */
   const graph = new Map();
   const visited = new Set();
-  const queue = [entry];
+  const queue = [...entries];
 
   function ensureNode(filePath) {
     if (!graph.has(filePath)) {

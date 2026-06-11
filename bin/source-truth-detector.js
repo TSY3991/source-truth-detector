@@ -4,11 +4,12 @@
 const path = require('node:path');
 const { buildGraph } = require('../src/graph/build');
 const { listFiles } = require('../src/scan/listFiles');
+const { findPossibleSourcesOfTruth } = require('../src/analysis/sourceOfTruth');
 
 const args = process.argv.slice(2);
 
 function printUsage() {
-  console.error('Usage: node bin/source-truth-detector.js scan <rootDir> --entry <entrypoint>');
+  console.error('Usage: node bin/source-truth-detector.js scan <rootDir> --entry <entrypoint> [--entry <entrypoint> ...]');
   process.exit(1);
 }
 
@@ -18,21 +19,30 @@ if (cmd !== 'scan') printUsage();
 const rootDir = args[1];
 if (!rootDir) printUsage();
 
-const entryFlagIdx = args.indexOf('--entry');
-if (entryFlagIdx === -1 || !args[entryFlagIdx + 1]) printUsage();
-const entrypoint = args[entryFlagIdx + 1];
+const entrypoints = [];
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--entry') {
+    if (!args[i + 1]) printUsage();
+    entrypoints.push(args[i + 1]);
+    i++;
+  }
+}
+if (entrypoints.length === 0) printUsage();
 
 const absRoot = path.resolve(rootDir);
-const absEntry = path.resolve(entrypoint);
+const absEntries = entrypoints.map((e) => path.resolve(e));
 
 console.log(`scan root  : ${absRoot}`);
-console.log(`entrypoint : ${absEntry}`);
+console.log('entrypoints:');
+for (const e of absEntries) {
+  console.log(`  ${e}`);
+}
 console.log('');
 
 // --- build dependency graph ---
 let graph;
 try {
-  graph = buildGraph(absEntry, absRoot);
+  graph = buildGraph(absEntries, absRoot);
 } catch (err) {
   console.error('ERROR:', err.message);
   process.exit(1);
@@ -68,9 +78,22 @@ if (unreferenced.length === 0) {
 }
 console.log('');
 
+// --- POSSIBLE_SOURCE_OF_TRUTH files ---
+const sourcesOfTruth = findPossibleSourcesOfTruth(graph);
+console.log('POSSIBLE_SOURCE_OF_TRUTH files:');
+if (sourcesOfTruth.length === 0) {
+  console.log('  (none)');
+} else {
+  for (const { file, fanIn } of sourcesOfTruth) {
+    console.log(`  ${file}  (referenced by ${fanIn} files)`);
+  }
+}
+console.log('');
+
 // --- Scan Summary ---
 console.log('Scan Summary:');
-console.log(`  Total files scanned : ${total}`);
-console.log(`  Used files          : ${usedCount}`);
-console.log(`  Unreferenced files  : ${unreferencedCount}`);
-console.log(`  Coverage            : ${coverage}%`);
+console.log(`  Total files scanned        : ${total}`);
+console.log(`  Used files                 : ${usedCount}`);
+console.log(`  Unreferenced files         : ${unreferencedCount}`);
+console.log(`  Possible sources of truth  : ${sourcesOfTruth.length}`);
+console.log(`  Coverage                   : ${coverage}%`);

@@ -107,3 +107,44 @@ test('entry node has empty inbound set', () => {
   const graph = buildGraph(entry, fixDir('simple'));
   assert.equal(graph.get(entry).inbound.size, 0);
 });
+
+// ── multi-entry ───────────────────────────────────────────────────────────────
+
+test('multi-entry: graph includes nodes reachable from either entrypoint', () => {
+  const entryA = fix('multi-entry', 'entryA.js');
+  const entryB = fix('multi-entry', 'entryB.js');
+  const shared = fix('multi-entry', 'shared.js');
+  const depA = fix('multi-entry', 'depA.js');
+  const depB = fix('multi-entry', 'depB.js');
+  const orphan = fix('multi-entry', 'orphan.js');
+
+  const graph = buildGraph([entryA, entryB], fixDir('multi-entry'));
+
+  assert.ok(graph.has(entryA), 'entryA in graph');
+  assert.ok(graph.has(entryB), 'entryB in graph');
+  assert.ok(graph.has(shared), 'shared in graph');
+  assert.ok(graph.has(depA), 'depA in graph');
+  assert.ok(graph.has(depB), 'depB in graph');
+  assert.ok(!graph.has(orphan), 'orphan not in graph');
+});
+
+test('multi-entry: shared node has inbound edges from both entrypoints', () => {
+  const entryA = fix('multi-entry', 'entryA.js');
+  const entryB = fix('multi-entry', 'entryB.js');
+  const shared = fix('multi-entry', 'shared.js');
+
+  const graph = buildGraph([entryA, entryB], fixDir('multi-entry'));
+
+  assert.ok(graph.get(shared).inbound.has(entryA), 'shared.inbound has entryA');
+  assert.ok(graph.get(shared).inbound.has(entryB), 'shared.inbound has entryB');
+});
+
+test('multi-entry: single-string entrypoint still works (backward compatible)', () => {
+  const entryA = fix('multi-entry', 'entryA.js');
+  const graph = buildGraph(entryA, fixDir('multi-entry'));
+
+  assert.ok(graph.has(entryA));
+  assert.ok(graph.has(fix('multi-entry', 'shared.js')));
+  assert.ok(graph.has(fix('multi-entry', 'depA.js')));
+  assert.ok(!graph.has(fix('multi-entry', 'depB.js')), 'depB not reachable from entryA alone');
+});
