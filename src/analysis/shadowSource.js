@@ -26,9 +26,14 @@ const SHARED_RATIO_THRESHOLD = 0.5;
  *
  * @param {Map<string, { inbound: Set<string>, outbound: Set<string> }>} graph
  * @param {{ file: string, fanIn: number }[]} sourcesOfTruth
+ * @param {{ minCanonicalExports?: number, sharedExportThreshold?: number, sharedRatioThreshold?: number }} [options]
  * @returns {{ file: string, duplicatesFrom: string, sharedExports: string[] }[]}
  */
-function findShadowSources(graph, sourcesOfTruth) {
+function findShadowSources(graph, sourcesOfTruth, options = {}) {
+  const minCanonicalExports = options.minCanonicalExports ?? MIN_CANONICAL_EXPORTS;
+  const sharedExportThreshold = options.sharedExportThreshold ?? SHARED_EXPORT_THRESHOLD;
+  const sharedRatioThreshold = options.sharedRatioThreshold ?? SHARED_RATIO_THRESHOLD;
+
   const canonicalFiles = new Set(sourcesOfTruth.map((s) => s.file));
   const exportsCache = new Map();
 
@@ -48,7 +53,7 @@ function findShadowSources(graph, sourcesOfTruth) {
 
   for (const { file: canonicalFile } of sourcesOfTruth) {
     const canonicalExports = getExports(canonicalFile);
-    if (canonicalExports.size < MIN_CANONICAL_EXPORTS) continue;
+    if (canonicalExports.size < minCanonicalExports) continue;
 
     for (const candidate of graph.keys()) {
       if (candidate === canonicalFile) continue;
@@ -60,7 +65,7 @@ function findShadowSources(graph, sourcesOfTruth) {
       const shared = [...candidateExports].filter((name) => canonicalExports.has(name));
       const ratio = shared.length / canonicalExports.size;
 
-      if (shared.length >= SHARED_EXPORT_THRESHOLD && ratio > SHARED_RATIO_THRESHOLD) {
+      if (shared.length >= sharedExportThreshold && ratio > sharedRatioThreshold) {
         results.push({ file: candidate, duplicatesFrom: canonicalFile, sharedExports: shared });
       }
     }

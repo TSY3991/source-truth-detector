@@ -169,3 +169,37 @@ test('cli scan: rejects invalid --format value', () => {
     { status: 1 }
   );
 });
+
+// ── config file ──────────────────────────────────────────────────────────
+
+test('cli scan: uses --entry and --format from .claude-truth-detector.json when flags omitted', () => {
+  const configPath = path.join(FIXTURE_ROOT, '.claude-truth-detector.json');
+  fs.writeFileSync(configPath, JSON.stringify({ entry: ['./entry.js'], format: 'json' }));
+  try {
+    const out = execSync(`node "${BIN}" scan "${FIXTURE_ROOT}"`, { encoding: 'utf8' });
+    const parsed = JSON.parse(out);
+    assert.equal(parsed.summary.totalFiles, 2);
+    assert.equal(parsed.entrypoints[0], ENTRY);
+  } finally {
+    fs.unlinkSync(configPath);
+  }
+});
+
+test('cli scan: --entry flag overrides config file entry', () => {
+  const configPath = path.join(FIXTURE_ROOT, '.claude-truth-detector.json');
+  fs.writeFileSync(configPath, JSON.stringify({ entry: ['./does-not-exist.js'], format: 'json' }));
+  try {
+    const out = execSync(`node "${BIN}" scan "${FIXTURE_ROOT}" --entry "${ENTRY}"`, { encoding: 'utf8' });
+    const parsed = JSON.parse(out);
+    assert.equal(parsed.entrypoints[0], ENTRY);
+  } finally {
+    fs.unlinkSync(configPath);
+  }
+});
+
+test('cli scan: exits 1 without --entry and without config file', () => {
+  assert.throws(
+    () => execSync(`node "${BIN}" scan "${FIXTURE_ROOT}"`, { encoding: 'utf8', stdio: 'pipe' }),
+    { status: 1 }
+  );
+});

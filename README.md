@@ -98,7 +98,7 @@ Step 3: 你看報告，自己決定
 
 ---
 
-## ✅ 現在就能用 — 30 秒範例（v0.7.0-alpha）
+## ✅ 現在就能用 — 30 秒範例（v0.8.0-alpha）
 
 不需要 npm install、不需要建置。直接用 Node 執行：
 
@@ -168,9 +168,30 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 跑完看 `UNREFERENCED files` 清單，那些就是「依賴鏈追不到」的檔案，值得你進一步檢查。
 
+### 用設定檔固定常用參數
+
+在掃描目錄（`<目錄>`）放一個 `.claude-truth-detector.json`，可以省略每次都要打的 `--entry` 等參數：
+
+```json
+{
+  "entry": ["./src/index.js", "./src/server.js"],
+  "format": "md",
+  "output": "report.md",
+  "fanInThreshold": 5,
+  "fanInRatioThreshold": 0.15,
+  "minCanonicalExports": 2,
+  "sharedExportThreshold": 2,
+  "sharedRatioThreshold": 0.5
+}
+```
+
+- `entry` 路徑相對於設定檔所在目錄解析
+- 命令列參數（`--entry` / `--format` / `--output`）會覆蓋設定檔內的對應值
+- 也可以用 `--config <path>` 指定其他設定檔位置
+
 ---
 
-## ⚠️ 已知限制（v0.7.0-alpha）
+## ⚠️ 已知限制（v0.8.0-alpha）
 
 使用前請先了解，避免誤判：
 
@@ -204,7 +225,7 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 ## 完整功能狀態
 
-**已完成（v0.7.0-alpha）：**
+**已完成（v0.8.0-alpha）：**
 
 - Dependency Graph — 建立檔案相依關係圖
 - Import Tracking — 追蹤 `import` 語法
@@ -215,10 +236,10 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 - Source-of-Truth Heuristics — 找出被大量檔案依賴的核心設定來源（高 fan-in）
 - Shadow Source Detection — 找出與核心來源共用大量 export 名稱、疑似過時複本的檔案
 - JSON / Markdown Reports — `--format json` / `--format md`，可加 `--output <file>` 寫入檔案
+- Config 設定檔 — `.claude-truth-detector.json` 可固定 entry / format / output / 各項 threshold，CLI 參數可覆蓋
 
 **規劃中：**
 
-- Config 設定檔（`.claude-truth-detector.json`）— 固定常用 entry / threshold
 - TypeScript（`.ts` / `.tsx`）支援
 
 ---
@@ -269,7 +290,7 @@ A: **不一定。** 常見情況包括：
 A: **絕對不會。** 這是 read-only 工具，只輸出報告，不寫入、不刪除、不修改任何檔案。
 
 **Q: 支援 TypeScript 嗎？**
-A: 目前（v0.7.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
+A: 目前（v0.8.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
 
 ---
 
@@ -339,7 +360,7 @@ Step 3: You read the report and decide
 
 ---
 
-## Try it now — 30 second example (v0.7.0-alpha)
+## Try it now — 30 second example (v0.8.0-alpha)
 
 No npm install or build step required. Run directly with Node:
 
@@ -407,9 +428,30 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 Check the `UNREFERENCED files` list — those are files the dependency chain can't reach, and worth investigating further.
 
+### Pin common options with a config file
+
+Drop a `.claude-truth-detector.json` in the directory you scan (`<dir>`) to avoid repeating flags like `--entry` every time:
+
+```json
+{
+  "entry": ["./src/index.js", "./src/server.js"],
+  "format": "md",
+  "output": "report.md",
+  "fanInThreshold": 5,
+  "fanInRatioThreshold": 0.15,
+  "minCanonicalExports": 2,
+  "sharedExportThreshold": 2,
+  "sharedRatioThreshold": 0.5
+}
+```
+
+- `entry` paths are resolved relative to the config file's directory
+- CLI flags (`--entry` / `--format` / `--output`) override the corresponding config values
+- Use `--config <path>` to point at a config file in a different location
+
 ---
 
-## Known Limitations (v0.7.0-alpha)
+## Known Limitations (v0.8.0-alpha)
 
 - **Only `.js` / `.jsx`** — `.ts` / `.tsx` files are not scanned or tracked
 - **Only relative imports/requires** (`./` or `../`) are resolved — `node_modules` packages and bare specifiers (e.g. `import React from 'react'`) are not analyzed
@@ -417,7 +459,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 
 ---
 
-## Current Features (v0.7.0-alpha)
+## Current Features (v0.8.0-alpha)
 
 **Implemented:**
 
@@ -430,10 +472,10 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 - Source-of-Truth Heuristics — flags files with unusually high fan-in (referenced by many other files)
 - Shadow Source Detection — flags files sharing many export names with a source-of-truth file (likely stale copies)
 - JSON / Markdown Reports — `--format json` / `--format md`, optionally write to a file with `--output <file>`
+- Config File — `.claude-truth-detector.json` can pin entry / format / output / thresholds; CLI flags override it
 
 **Planned:**
 
-- Config file (`.claude-truth-detector.json`)
 - TypeScript (`.ts` / `.tsx`) support
 
 ---
@@ -448,7 +490,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 | v0.5.0-alpha | Source-of-Truth detection (fan-in heuristics) |
 | v0.6.0-alpha | Shadow Source detection (export-name heuristics) |
 | v0.7.0-alpha | JSON/Markdown reports (`--format`, `--output`) |
-| v0.8.0 | Config file (`.claude-truth-detector.json`) |
+| v0.8.0-alpha | Config file (`.claude-truth-detector.json`) |
 | v1.0.0 | Stable, published to npm, CI integration guide |
 
 ---
@@ -473,7 +515,7 @@ The tool reports the fact "the dependency chain can't reach this file" — not "
 A: **Never.** This is a read-only tool. It only prints a report — it never writes, deletes, or modifies anything.
 
 **Q: Does it support TypeScript?**
-A: Not yet (v0.7.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
+A: Not yet (v0.8.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
 
 ---
 

@@ -13,16 +13,19 @@ const FAN_IN_RATIO_THRESHOLD = 0.15;
  *   - its fan-in ratio (inbound / total USED files) exceeds FAN_IN_RATIO_THRESHOLD
  *
  * @param {Map<string, { inbound: Set<string>, outbound: Set<string> }>} graph
+ * @param {{ fanInThreshold?: number, fanInRatioThreshold?: number }} [options]
  * @returns {{ file: string, fanIn: number }[]}  sorted by fanIn descending
  */
-function findPossibleSourcesOfTruth(graph) {
+function findPossibleSourcesOfTruth(graph, options = {}) {
+  const fanInThreshold = options.fanInThreshold ?? FAN_IN_THRESHOLD;
+  const fanInRatioThreshold = options.fanInRatioThreshold ?? FAN_IN_RATIO_THRESHOLD;
   const usedCount = graph.size;
   const results = [];
 
   for (const [file, node] of graph) {
     const fanIn = node.inbound.size;
-    const exceedsAbsolute = fanIn >= FAN_IN_THRESHOLD;
-    const exceedsRatio = usedCount > 0 && fanIn / usedCount > FAN_IN_RATIO_THRESHOLD;
+    const exceedsAbsolute = fanIn >= fanInThreshold;
+    const exceedsRatio = usedCount > 0 && fanIn / usedCount > fanInRatioThreshold;
 
     if (exceedsAbsolute || exceedsRatio) {
       results.push({ file, fanIn });

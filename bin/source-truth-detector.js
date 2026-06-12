@@ -8,11 +8,13 @@ const { listFiles } = require('../src/scan/listFiles');
 const { findPossibleSourcesOfTruth } = require('../src/analysis/sourceOfTruth');
 const { findShadowSources } = require('../src/analysis/shadowSource');
 const { buildResult, formatText, formatJson, formatMarkdown } = require('../src/report/formatResult');
+const { loadConfig } = require('../src/config/loadConfig');
 
 const args = process.argv.slice(2);
 
 function printUsage() {
-  console.error('Usage: node bin/source-truth-detector.js scan <rootDir> --entry <entrypoint> [--entry <entrypoint> ...] [--format text|json|md] [--output <file>]');
+  console.error('Usage: node bin/source-truth-detector.js scan <rootDir> [--entry <entrypoint> ...] [--format text|json|md] [--output <file>] [--config <path>]');
+  console.error('  --entry can be omitted if .claude-truth-detector.json provides "entry"');
   process.exit(1);
 }
 
@@ -23,8 +25,9 @@ const rootDir = args[1];
 if (!rootDir) printUsage();
 
 const entrypoints = [];
-let format = 'text';
+let format = null;
 let outputFile = null;
+let configPath = null;
 for (let i = 2; i < args.length; i++) {
   if (args[i] === '--entry') {
     if (!args[i + 1]) printUsage();
@@ -38,13 +41,30 @@ for (let i = 2; i < args.length; i++) {
     if (!args[i + 1]) printUsage();
     outputFile = args[i + 1];
     i++;
+  } else if (args[i] === '--config') {
+    if (!args[i + 1]) printUsage();
+    configPath = args[i + 1];
+    i++;
   }
 }
-if (entrypoints.length === 0) printUsage();
-if (!['text', 'json', 'md'].includes(format)) printUsage();
 
 const absRoot = path.resolve(rootDir);
-const absEntries = entrypoints.map((e) => path.resolve(e));
+
+let config;
+try {
+  config = loadConfig(absRoot, configPath);
+} catch (err) {
+  console.error('ERROR:', err.message);
+  process.exit(1);
+}
+config = config || {};
+
+const absEntries = (entrypoints.length > 0 ? entrypoints.map((e) => path.resolve(e)) : config.entry) || [];
+if (absEntries.length === 0) printUsage();
+
+if (format === null) format = config.format || 'text';
+if (outputFile === null) outputFile = config.output || null;
+if (!['text', 'json', 'md'].includes(format)) printUsage();
 
 // --- build dependency graph ---
 let graph;
@@ -65,8 +85,15 @@ const unreferenced = allFiles.filter(f => !usedSet.has(f));
 const total = allFiles.length;
 const coverage = total > 0 ? ((used.length / total) * 100).toFixed(1) : '0.0';
 
-const sourcesOfTruth = findPossibleSourcesOfTruth(graph);
-const shadowSources = findShadowSources(graph, sourcesOfTruth);
+const sourcesOfTruth = findPossibleSourcesOfTruth(graph, {
+  fanInThreshold: config.fanInThreshold,
+  fanInRatioThreshold: config.fanInRatioThreshold,
+});
+const shadowSources = findShadowSources(graph, sourcesOfTruth, {
+  minCanonicalExports: config.minCanonicalExports,
+  sharedExportThreshold: config.sharedExportThreshold,
+  sharedRatioThreshold: config.sharedRatioThreshold,
+});
 
 const result = buildResult({
   scanRoot: absRoot,
