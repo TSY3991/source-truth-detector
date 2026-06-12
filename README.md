@@ -493,6 +493,8 @@ Drop a `.claude-truth-detector.json` in the directory you scan (`<dir>`) to avoi
 | v0.8.0-alpha | Config file (`.claude-truth-detector.json`) |
 | v1.0.0 | Stable, published to npm, CI integration guide |
 
+See [CHANGELOG.md](./CHANGELOG.md) for the full version history.
+
 ---
 
 ## FAQ
