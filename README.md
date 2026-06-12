@@ -98,7 +98,7 @@ Step 3: 你看報告，自己決定
 
 ---
 
-## ✅ 現在就能用 — 30 秒範例（v0.6.0-alpha）
+## ✅ 現在就能用 — 30 秒範例（v0.7.0-alpha）
 
 不需要 npm install、不需要建置。直接用 Node 執行：
 
@@ -170,7 +170,7 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 ---
 
-## ⚠️ 已知限制（v0.6.0-alpha）
+## ⚠️ 已知限制（v0.7.0-alpha）
 
 使用前請先了解，避免誤判：
 
@@ -204,7 +204,7 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 
 ## 完整功能狀態
 
-**已完成（v0.6.0-alpha）：**
+**已完成（v0.7.0-alpha）：**
 
 - Dependency Graph — 建立檔案相依關係圖
 - Import Tracking — 追蹤 `import` 語法
@@ -214,10 +214,11 @@ node source-truth-detector/bin/source-truth-detector.js scan \
 - Multi-Entrypoint Support — 可同時指定多個 `--entry`，合併計算 USED 集合
 - Source-of-Truth Heuristics — 找出被大量檔案依賴的核心設定來源（高 fan-in）
 - Shadow Source Detection — 找出與核心來源共用大量 export 名稱、疑似過時複本的檔案
+- JSON / Markdown Reports — `--format json` / `--format md`，可加 `--output <file>` 寫入檔案
 
 **規劃中：**
 
-- Markdown / JSON Reports — 輸出可閱讀的分析報告
+- Config 設定檔（`.claude-truth-detector.json`）— 固定常用 entry / threshold
 - TypeScript（`.ts` / `.tsx`）支援
 
 ---
@@ -268,7 +269,7 @@ A: **不一定。** 常見情況包括：
 A: **絕對不會。** 這是 read-only 工具，只輸出報告，不寫入、不刪除、不修改任何檔案。
 
 **Q: 支援 TypeScript 嗎？**
-A: 目前（v0.6.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
+A: 目前（v0.7.0-alpha）只支援 `.js` / `.jsx`，TypeScript 支援在規劃中（見 Roadmap）。
 
 ---
 
@@ -338,7 +339,7 @@ Step 3: You read the report and decide
 
 ---
 
-## Try it now — 30 second example (v0.6.0-alpha)
+## Try it now — 30 second example (v0.7.0-alpha)
 
 No npm install or build step required. Run directly with Node:
 
@@ -408,7 +409,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 
 ---
 
-## Known Limitations (v0.6.0-alpha)
+## Known Limitations (v0.7.0-alpha)
 
 - **Only `.js` / `.jsx`** — `.ts` / `.tsx` files are not scanned or tracked
 - **Only relative imports/requires** (`./` or `../`) are resolved — `node_modules` packages and bare specifiers (e.g. `import React from 'react'`) are not analyzed
@@ -416,7 +417,7 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 
 ---
 
-## Current Features (v0.6.0-alpha)
+## Current Features (v0.7.0-alpha)
 
 **Implemented:**
 
@@ -428,10 +429,11 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 - Multi-Entrypoint Support — pass `--entry` multiple times; USED sets are merged
 - Source-of-Truth Heuristics — flags files with unusually high fan-in (referenced by many other files)
 - Shadow Source Detection — flags files sharing many export names with a source-of-truth file (likely stale copies)
+- JSON / Markdown Reports — `--format json` / `--format md`, optionally write to a file with `--output <file>`
 
 **Planned:**
 
-- Markdown / JSON Reports
+- Config file (`.claude-truth-detector.json`)
 - TypeScript (`.ts` / `.tsx`) support
 
 ---
@@ -445,7 +447,8 @@ Check the `UNREFERENCED files` list — those are files the dependency chain can
 | v0.4.0-alpha | Multi-Entrypoint support |
 | v0.5.0-alpha | Source-of-Truth detection (fan-in heuristics) |
 | v0.6.0-alpha | Shadow Source detection (export-name heuristics) |
-| v0.7.0 | JSON/Markdown reports |
+| v0.7.0-alpha | JSON/Markdown reports (`--format`, `--output`) |
+| v0.8.0 | Config file (`.claude-truth-detector.json`) |
 | v1.0.0 | Stable, published to npm, CI integration guide |
 
 ---
@@ -470,7 +473,7 @@ The tool reports the fact "the dependency chain can't reach this file" — not "
 A: **Never.** This is a read-only tool. It only prints a report — it never writes, deletes, or modifies anything.
 
 **Q: Does it support TypeScript?**
-A: Not yet (v0.6.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
+A: Not yet (v0.7.0-alpha) — only `.js` / `.jsx`. TypeScript support is planned (see Roadmap).
 
 ---
 

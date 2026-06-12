@@ -1,6 +1,8 @@
 'use strict';
 
 const { execSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
@@ -129,4 +131,41 @@ test('cli scan: shadow-source — duplicate.js flagged as SHADOW_SOURCE of canon
   assert.ok(shadowSection.includes('A, B'), 'shared export names mismatch');
   assert.ok(shadowSection.includes('canonical.js'), 'missing canonical.js reference');
   assert.ok(out.includes('Shadow sources             : 1'), `shadow source count mismatch:\n${out}`);
+});
+
+// ── output formats ──────────────────────────────────────────────────────────
+
+test('cli scan: --format json outputs valid JSON with summary', () => {
+  const out = execSync(`node "${BIN}" scan "${FIXTURE_ROOT}" --entry "${ENTRY}" --format json`, { encoding: 'utf8' });
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.summary.totalFiles, 2);
+  assert.equal(parsed.summary.usedFiles, 2);
+  assert.equal(parsed.summary.coverage, 100);
+});
+
+test('cli scan: --format md outputs markdown report', () => {
+  const out = execSync(`node "${BIN}" scan "${FIXTURE_ROOT}" --entry "${ENTRY}" --format md`, { encoding: 'utf8' });
+  assert.ok(out.includes('# Source Truth Detector Report'));
+  assert.ok(out.includes('## Scan Summary'));
+  assert.ok(out.includes('| Coverage | 100.0% |'));
+});
+
+test('cli scan: --output writes report to file', () => {
+  const outFile = path.join(os.tmpdir(), `stdetector-report-${Date.now()}.json`);
+  try {
+    const out = execSync(`node "${BIN}" scan "${FIXTURE_ROOT}" --entry "${ENTRY}" --format json --output "${outFile}"`, { encoding: 'utf8' });
+    assert.ok(out.includes('Report written to'), 'missing confirmation message');
+    assert.ok(fs.existsSync(outFile), 'output file not created');
+    const parsed = JSON.parse(fs.readFileSync(outFile, 'utf8'));
+    assert.equal(parsed.summary.totalFiles, 2);
+  } finally {
+    if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
+  }
+});
+
+test('cli scan: rejects invalid --format value', () => {
+  assert.throws(
+    () => execSync(`node "${BIN}" scan "${FIXTURE_ROOT}" --entry "${ENTRY}" --format xml`, { encoding: 'utf8', stdio: 'pipe' }),
+    { status: 1 }
+  );
 });
