@@ -5,7 +5,7 @@
 > Find what your project actually uses.
 
 **作者**：**TSY**
-🔗 [Facebook](https://www.facebook.com/profile.php?id=61590545304079)
+🔗 [Facebook](https://www.facebook.com/TSY.Microglow)
 (https://github.com/TSY3991/source-truth-detector)
 
 ---
@@ -543,7 +543,7 @@ Only the dependency graph tells the truth.
 
 與其每次都靠肉眼追 import，不如寫一個工具把依賴鏈畫出來、把事實攤開——剩下的判斷交還給人。
 
-如果這個工具幫到你，歡迎來信或私訊交流：[Facebook](https://www.facebook.com/profile.php?id=61590545304079)
+如果這個工具幫到你，歡迎來信或私訊交流：[Facebook](https://www.facebook.com/TSY.Microglow)
 
 也特別感謝  駱君昊 (Hao)** · MetaFantasy Co-Founder · AIGC 數位創作者 的分享
 🔗 [Facebook](https://www.facebook.com/lo.jain.hao)
